@@ -28,33 +28,37 @@ Resources:
           MyLambdaTokenAuthorizer:
             FunctionArn: !GetAtt MyAuthFunction.Arn
 
-  MyFunction:
+  Hello:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src
-      Handler: app.handler
+      Handler: hello.handler
+      Architectures:
+        - arm64
       Runtime: nodejs18.x
       Events:
         GetRoot:
           Type: Api
           Properties:
             RestApiId: !Ref MyApi
-            Path: /
+            Path: /hello
             Method: get
-    Metadata: # Manage esbuild properties
+    Metadata:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
         Target: "es2020"
         Sourcemap: true
         EntryPoints: 
-        - app.ts
+        - hello.ts
 
   MyAuthFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src
       Handler: authorizer.handler
+      Architectures:
+        - arm64
       Runtime: nodejs18.x
     Metadata:
       BuildMethod: esbuild
