@@ -32,6 +32,7 @@ interface KeycloakJwt extends JwtPayload {
 
 const publicKey = process.env.PUBLIC_KEY;
 const requiredRole = process.env.REQUIRED_ROLE;
+
 if (!publicKey || !requiredRole) {
     throw new Error('Environment variables are missing.');
 }
@@ -41,8 +42,8 @@ export const handler = async (
     context: APIGatewayEventDefaultAuthorizerContext,
     callback: CustomAuthorizerCallback,
 ) => {
-    console.log('event:', event);
-    console.log('context:', context);
+    console.log('Event:', event);
+    console.log('Context:', context);
 
     if (event.type != 'TOKEN') {
         const message = `Unsupported type ${event.type}`;
@@ -54,22 +55,20 @@ export const handler = async (
     const token = event.authorizationToken.replace('Bearer ', '');
 
     verify(token, publicKey, (error, decoded) => {
-        console.log('error:', error);
-        console.log('decoded:', decoded);
-
         if (error) {
-            console.log('error:', error);
+            console.warn('Error:', error);
             return callback(null, generatePolicy('user', 'Deny', event.methodArn, { message: error.message }));
         }
 
         if (typeof decoded === 'string' || !decoded) {
-            console.log('invalid decoded:', decoded);
+            console.warn('Invalid decoded:', decoded);
             return callback(null, generatePolicy('user', 'Deny', event.methodArn));
         }
-        const token = decoded as KeycloakJwt;
+        const keycloakToken = decoded as KeycloakJwt;
+        console.log('KeycloakToken:', keycloakToken);
 
         // check with roles
-        if (token.realm_access.roles.includes(requiredRole)) {
+        if (keycloakToken.realm_access.roles.includes(requiredRole)) {
             return callback(null, generatePolicy('user', 'Allow', event.methodArn));
         }
 
@@ -104,6 +103,6 @@ const generatePolicy = (
         context,
     };
 
-    console.info('Response: ', authResponse);
+    console.log('Response: ', JSON.stringify(authResponse, null, '\t'));
     return authResponse;
 };
