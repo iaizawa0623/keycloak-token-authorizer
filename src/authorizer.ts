@@ -1,11 +1,3 @@
-// A simple token-based authorizer example to demonstrate how to use an authorization token
-// to allow or deny a request. In this example, the caller named 'user' is allowed to invoke
-// a request if the client-supplied token value is 'allow'. The caller is not allowed to invoke
-// the request if the token value is 'deny'. If the token value is 'unauthorized' or an empty
-// string, the authorizer function returns an HTTP 401 status code. For any other token value,
-// the authorizer returns an HTTP 500 status code.
-// Note that token values are case-sensitive.
-
 import {
     APIGatewayEventDefaultAuthorizerContext,
     CustomAuthorizerCallback,
@@ -39,8 +31,9 @@ interface KeycloakJwt extends JwtPayload {
 }
 
 const publicKey = process.env.PUBLIC_KEY;
-if (!publicKey) {
-    throw new Error('public key is none!');
+const requiredRole = process.env.REQUIRED_ROLE;
+if (!publicKey || !requiredRole) {
+    throw new Error('Environment variables are missing.');
 }
 
 export const handler = async (
@@ -73,14 +66,14 @@ export const handler = async (
             console.log('invalid decoded:', decoded);
             return callback(null, generatePolicy('user', 'Deny', event.methodArn));
         }
-
         const token = decoded as KeycloakJwt;
-        console.log('token:', token);
 
-        if (token.realm_access.roles.includes('default-roles-myrealm')) {
+        // check with roles
+        if (token.realm_access.roles.includes(requiredRole)) {
             return callback(null, generatePolicy('user', 'Allow', event.methodArn));
         }
-        console.warn('権限がありません');
+
+        console.warn('Not authorized.');
         return callback(null, generatePolicy('user', 'Deny', event.methodArn));
     });
 };
@@ -111,6 +104,6 @@ const generatePolicy = (
         context,
     };
 
-    // Optional output with custom properties of the String, Number or Boolean type.
+    console.info('Response: ', authResponse);
     return authResponse;
 };
