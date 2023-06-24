@@ -57,7 +57,10 @@ export const handler = async (
         return callback(null, generatePolicy('user', 'Deny', event.methodArn, { message }));
     }
 
-    verify(event.authorizationToken, publicKey, (error, decoded) => {
+    // remove bearer prefix
+    const token = event.authorizationToken.replace('Bearer ', '');
+
+    verify(token, publicKey, (error, decoded) => {
         console.log('error:', error);
         console.log('decoded:', decoded);
 
