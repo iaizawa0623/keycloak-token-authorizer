@@ -83,8 +83,6 @@ export const handler = async (
         console.warn('権限がありません');
         return callback(null, generatePolicy('user', 'Deny', event.methodArn));
     });
-
-    return callback(null, generatePolicy('user', 'Deny', event.methodArn));
 };
 
 // Help function to generate an IAM policy
